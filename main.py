@@ -17,6 +17,7 @@ class ConsoleTyping:
 
     def __init__(self):
         self.screen = curses.initscr()
+        self.screen.keypad(True)
         curses.start_color()
         if not curses.has_colors():
             raise Exception("The colors are not supported in this console")
