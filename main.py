@@ -42,8 +42,10 @@ class ConsoleTyping:
     def run(self):
         self.initial_text()
         current_char_index = 0
-        while True:
-            current_char_index = self.checkKey(self.screen.getkey(), current_char_index)
+        key = None
+        while key != '\033':
+            key = self.screen.getkey()
+            current_char_index = self.checkKey(key, current_char_index)
 
 
     def textPositionToSreenPosition(self, char_index):
