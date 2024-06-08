@@ -1,14 +1,16 @@
 import curses
+import typing
 class ConsoleTyping:
-    SCREEN_START_X = 5
-    SCREEN_START_Y = 5
     COLOR_BASE     = 1
     COLOR_CORRECT  = 2
     COLOR_WRONG    = 3
     SPACE          = "\u2022"
 
+    horizontal_margin = 5
+    vertical_margin = 5
     original_text = ""
     typed_text    = ""
+    cursor_positions = dict()
     screen        = None
     screen_height = 0
     screen_width  = 0
@@ -32,9 +34,9 @@ class ConsoleTyping:
 
         self.original_text = open("text.txt","r").read()
         self.screen_height, self.screen_width = self.screen.getmaxyx()
-        self.cursor_x = self.SCREEN_START_X
-        self.cursor_y = self.SCREEN_START_Y
-        self.screen.move(self.cursor_y, self.cursor_x)
+        self.cursor_x = self.horizontal_margin
+        self.cursor_y = self.vertical_margin
+        self.calculate_cursor_positions()
 
     def __del__(self):
         curses.nocbreak()
@@ -44,65 +46,58 @@ class ConsoleTyping:
         self.initial_text()
         current_char_index = 0
         key = None
+        self.screen.move(self.cursor_y, self.cursor_x)
         while key != '\033':
             key = self.screen.getkey()
             current_char_index = self.checkKey(key, current_char_index)
 
 
-    def textPositionToSreenPosition(self, char_index):
-        width = self.screen_width - self.SCREEN_START_X
-        x = self.SCREEN_START_X
-        y = self.SCREEN_START_Y
+    def calculate_cursor_positions(self):
+        width = self.screen_width - self.horizontal_margin
+        x = self.horizontal_margin
+        y = self.vertical_margin
         words = self.original_text.split()
-        i = 0
-        increase = 0
-        leave = False
+        text_index = 0
         for word in words:
+            word += " "
             wlen = len(word)
-            if x + wlen + 1 > width:
-                x = self.SCREEN_START_X
+            if x + wlen > width:
+                x = self.horizontal_margin
                 y += 1
-            if i + wlen + 1 <= char_index:
-                increase = wlen + 1
-            else:
-                increase = char_index - i
-                leave = True
-            x += increase
-            i += increase
-            increase = 0
-            if leave:
-                break
-        return x, y
+            for word_index in range(wlen):
+                self.cursor_positions[text_index] = (x + word_index, y)
+                text_index += 1
+            x += wlen
 
     def checkKey(self, key, char_index):
-        x, y = self.textPositionToSreenPosition(char_index)
+        x, y = self.cursor_positions[char_index]
         if key in ('KEY_BACKSPACE', '\b', '\x7f'):
             if char_index == 0:
                 return 0
             char_index -= 1
-            x, y = self.textPositionToSreenPosition(char_index)
+            x, y = self.cursor_positions[char_index]
             ch = self.SPACE if self.original_text[char_index] == " " else self.original_text[char_index]
             self.screen.addch(y, x, ch, curses.color_pair(self.COLOR_BASE))
         else:
             if char_index >= len(self.original_text):
                 return len(self.original_text)
-            x, y = self.textPositionToSreenPosition(char_index)
+            x, y = self.cursor_positions[char_index]
             ch = self.SPACE if self.original_text[char_index] == " " else self.original_text[char_index]
             self.screen.addch(y, x, ch, curses.color_pair( self.COLOR_CORRECT if key == self.original_text[char_index] else self.COLOR_WRONG) )
             char_index += 1
-        x, y = self.textPositionToSreenPosition(char_index)
+        x, y = self.cursor_positions[char_index]
         self.screen.move(y, x)
         return char_index
 
     def initial_text(self):
         words = self.original_text.split()
-        x = self.SCREEN_START_X
-        y = self.SCREEN_START_Y
-        width = self.screen_width - self.SCREEN_START_X
+        x = self.horizontal_margin
+        y = self.vertical_margin
+        width = self.screen_width - self.horizontal_margin
 
         for word in words:
             if x + len(word) + 1 > width:
-                x = self.SCREEN_START_X
+                x = self.horizontal_margin
                 y += 1
             self.screen.addstr(y, x, word + self.SPACE, curses.color_pair(self.COLOR_BASE))
             x += len(word) + 1
