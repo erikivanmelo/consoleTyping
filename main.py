@@ -44,6 +44,7 @@ class ConsoleTyping:
 
     def run(self):
         self.initial_text()
+        self.draw_border()
         current_char_index = 0
         key = None
         self.screen.move(self.cursor_y, self.cursor_x)
@@ -51,6 +52,22 @@ class ConsoleTyping:
             key = self.screen.getkey()
             current_char_index = self.checkKey(key, current_char_index)
 
+    def draw_border(self):
+        y = self.vertical_margin - 1
+        x = self.horizontal_margin - 1
+        height = (self.screen_height - (self.vertical_margin * 2)) + 2
+        width = (self.screen_width - (self.horizontal_margin * 2)) + 2
+
+        self.screen.hline(y, x, curses.ACS_HLINE, width)
+        self.screen.hline(y + height - 1, x, curses.ACS_HLINE, width)
+
+        self.screen.vline(y, x, curses.ACS_VLINE, height)
+        self.screen.vline(y, x + width - 1, curses.ACS_VLINE, height)
+
+        self.screen.addch(y, x, curses.ACS_ULCORNER)            # Esquina superior izquierda
+        self.screen.addch(y, x + width - 1, curses.ACS_URCORNER) # Esquina superior derecha
+        self.screen.addch(y + height - 1, x, curses.ACS_LLCORNER) # Esquina inferior izquierda
+        self.screen.addch(y + height - 1, x + width - 1, curses.ACS_LRCORNER) # Esquina inferior derecha
 
     def calculate_cursor_positions(self):
         width = self.screen_width - self.horizontal_margin
