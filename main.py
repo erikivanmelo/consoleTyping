@@ -32,7 +32,7 @@ class ConsoleTyping:
         curses.init_pair(2, curses.COLOR_GREEN, curses.COLOR_BLACK)
         curses.init_pair(3, curses.COLOR_RED, curses.COLOR_BLACK)
 
-        self.original_text = open("text.txt","r").read()
+        self.original_text = open("text.txt","r").read().replace(' ', self.SPACE)
         self.screen_height, self.screen_width = self.screen.getmaxyx()
         self.cursor_x = self.horizontal_margin
         self.cursor_y = self.vertical_margin
@@ -50,6 +50,8 @@ class ConsoleTyping:
         self.screen.move(self.cursor_y, self.cursor_x)
         while key != '\033':
             key = self.screen.getkey()
+            if (key == ' '):
+                key = self.SPACE
             current_char_index = self.checkKey(key, current_char_index)
 
     def draw_border(self):
@@ -73,7 +75,7 @@ class ConsoleTyping:
         width = self.screen_width - self.horizontal_margin
         x = self.horizontal_margin
         y = self.vertical_margin
-        words = self.original_text.split()
+        words = self.original_text.split(self.SPACE)
         text_index = 0
         for word in words:
             word += " "
@@ -93,13 +95,13 @@ class ConsoleTyping:
                 return 0
             char_index -= 1
             x, y = self.cursor_positions[char_index]
-            ch = self.SPACE if self.original_text[char_index] == " " else self.original_text[char_index]
+            ch = self.original_text[char_index]
             self.screen.addch(y, x, ch, curses.color_pair(self.COLOR_BASE))
         else:
             if char_index >= len(self.original_text):
                 return len(self.original_text)
             x, y = self.cursor_positions[char_index]
-            ch = self.SPACE if self.original_text[char_index] == " " else self.original_text[char_index]
+            ch = self.original_text[char_index]
             self.screen.addch(y, x, ch, curses.color_pair( self.COLOR_CORRECT if key == self.original_text[char_index] else self.COLOR_WRONG) )
             char_index += 1
         x, y = self.cursor_positions[char_index]
@@ -107,7 +109,7 @@ class ConsoleTyping:
         return char_index
 
     def initial_text(self):
-        words = self.original_text.split()
+        words = self.original_text.split(self.SPACE)
         x = self.horizontal_margin
         y = self.vertical_margin
         width = self.screen_width - self.horizontal_margin
