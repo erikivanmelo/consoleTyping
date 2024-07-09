@@ -45,14 +45,45 @@ class ConsoleTyping:
     def run(self):
         self.initial_text()
         self.draw_border()
-        current_char_index = 0
+        char_index = 0
+        x, y = self.cursor_positions[char_index]
         key = None
         self.screen.move(self.cursor_y, self.cursor_x)
         while key != '\033':
             key = self.screen.getkey()
             if (key == ' '):
                 key = self.SPACE
-            current_char_index = self.checkKey(key, current_char_index)
+
+            if key in ('KEY_BACKSPACE', '\b', '\x7f'):
+                if (char_index > 0):
+                    char_index -= 1
+                    self.clear_char_color(char_index)
+            elif char_index < len(self.original_text):
+                self.set_correct_char_color(char_index, key)
+                char_index += 1
+            x, y = self.cursor_positions[char_index]
+            self.screen.move(y, x)
+
+    def clear_char_color(self, char_index):
+        x, y = self.cursor_positions[char_index]
+        self.screen.addch(
+            y,
+            x,
+            self.original_text[char_index],
+            curses.color_pair(self.COLOR_BASE)
+        )
+
+
+    def set_correct_char_color(self, char_index, key = 0):
+        x, y = self.cursor_positions[char_index]
+        self.screen.addch(
+            y,
+            x,
+            self.original_text[char_index],
+            curses.color_pair(self.COLOR_CORRECT if key == self.original_text[char_index] else self.COLOR_WRONG)
+        )
+
+
 
     def draw_border(self):
         y = self.vertical_margin - 1
@@ -87,26 +118,6 @@ class ConsoleTyping:
                 self.cursor_positions[text_index] = (x + word_index, y)
                 text_index += 1
             x += wlen
-
-    def checkKey(self, key, char_index):
-        x, y = self.cursor_positions[char_index]
-        if key in ('KEY_BACKSPACE', '\b', '\x7f'):
-            if char_index == 0:
-                return 0
-            char_index -= 1
-            x, y = self.cursor_positions[char_index]
-            ch = self.original_text[char_index]
-            self.screen.addch(y, x, ch, curses.color_pair(self.COLOR_BASE))
-        else:
-            if char_index >= len(self.original_text):
-                return len(self.original_text)
-            x, y = self.cursor_positions[char_index]
-            ch = self.original_text[char_index]
-            self.screen.addch(y, x, ch, curses.color_pair( self.COLOR_CORRECT if key == self.original_text[char_index] else self.COLOR_WRONG) )
-            char_index += 1
-        x, y = self.cursor_positions[char_index]
-        self.screen.move(y, x)
-        return char_index
 
     def initial_text(self):
         words = self.original_text.split(self.SPACE)
