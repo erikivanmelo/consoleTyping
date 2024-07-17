@@ -5,6 +5,7 @@ class ConsoleTyping:
     COLOR_CORRECT  = 2
     COLOR_WRONG    = 3
     SPACE          = "\u2022"
+    ACCEPTED_KEYS  = "abcdefghijlmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ ,.:;_-()"
 
     horizontal_margin = 5
     vertical_margin = 5
@@ -33,36 +34,40 @@ class ConsoleTyping:
         curses.init_pair(3, curses.COLOR_RED, curses.COLOR_BLACK)
 
         self.original_text = open("text.txt","r").read().replace(' ', self.SPACE)
-        self.screen_height, self.screen_width = self.screen.getmaxyx()
         self.cursor_x = self.horizontal_margin
         self.cursor_y = self.vertical_margin
-        self.calculate_cursor_positions()
+        screen_height, screen_width = self.screen.getmaxyx()
+        self.screen_size_changed(screen_width, screen_height)
 
     def __del__(self):
         curses.nocbreak()
         curses.endwin()
 
     def run(self):
-        self.initial_text()
-        self.draw_border()
         char_index = 0
-        x, y = self.cursor_positions[char_index]
         key = None
         self.screen.move(self.cursor_y, self.cursor_x)
         while key != '\033':
-            key = self.screen.getkey()
-            if (key == ' '):
-                key = self.SPACE
+            current_screen_height, current_screen_width = self.screen.getmaxyx()
+            if current_screen_width != self.screen_width or current_screen_height != self.screen_height:
+                self.screen_size_changed(current_screen_width, current_screen_height)
 
-            if key in ('KEY_BACKSPACE', '\b', '\x7f'):
-                if (char_index > 0):
-                    char_index -= 1
-                    self.clear_char_color(char_index)
-            elif char_index < len(self.original_text):
-                self.set_correct_char_color(char_index, key)
-                char_index += 1
-            x, y = self.cursor_positions[char_index]
-            self.screen.move(y, x)
+            key = self.screen.getkey()
+
+            if key in self.ACCEPTED_KEYS or key == 'KEY_BACKSPACE':
+                if key == 'KEY_BACKSPACE':
+                    if (char_index > 0):
+                        self.typed_text = self.typed_text[:-1]
+                        char_index -= 1
+                        self.clear_char_color(char_index)
+                elif char_index < len(self.original_text):
+                    if (key == ' '):
+                        key = self.SPACE
+                    self.typed_text += key
+                    self.set_correct_char_color(char_index, key)
+                    char_index += 1
+                x, y = self.cursor_positions[char_index]
+                self.screen.move(y, x)
 
     def clear_char_color(self, char_index):
         x, y = self.cursor_positions[char_index]
@@ -74,7 +79,7 @@ class ConsoleTyping:
         )
 
 
-    def set_correct_char_color(self, char_index, key = 0):
+    def set_correct_char_color(self, char_index, key):
         x, y = self.cursor_positions[char_index]
         self.screen.addch(
             y,
@@ -84,6 +89,13 @@ class ConsoleTyping:
         )
 
 
+    def screen_size_changed(self,width,height):
+        self.screen_width  = width
+        self.screen_height = height
+        self.screen.clear()
+        self.draw_border()
+        self.calculate_cursor_positions()
+        self.initial_text()
 
     def draw_border(self):
         y = self.vertical_margin - 1
@@ -131,6 +143,11 @@ class ConsoleTyping:
                 y += 1
             self.screen.addstr(y, x, word + self.SPACE, curses.color_pair(self.COLOR_BASE))
             x += len(word) + 1
+        if self.typed_text != "":
+            i = 0
+            for ch in self.typed_text:
+                self.set_correct_char_color(i,ch)
+                i += 1
 
 
 if __name__ == "__main__":
