@@ -47,7 +47,7 @@ class ConsoleTyping:
         char_index = 0
         key = None
         self.screen.move(self.cursor_y, self.cursor_x)
-        while key != '\033':
+        while key != 'KEY_ESC':
             current_screen_height, current_screen_width = self.screen.getmaxyx()
             if current_screen_width != self.screen_width or current_screen_height != self.screen_height:
                 self.screen_size_changed(current_screen_width, current_screen_height)
@@ -56,12 +56,12 @@ class ConsoleTyping:
 
             if key in self.ACCEPTED_KEYS or key == 'KEY_BACKSPACE':
                 if key == 'KEY_BACKSPACE':
-                    if (char_index > 0):
+                    if char_index > 0:
                         self.typed_text = self.typed_text[:-1]
                         char_index -= 1
                         self.clear_char_color(char_index)
                 elif char_index < len(self.original_text):
-                    if (key == ' '):
+                    if key == ' ':
                         key = self.SPACE
                     self.typed_text += key
                     self.set_correct_char_color(char_index, key)
@@ -109,20 +109,19 @@ class ConsoleTyping:
         self.screen.vline(y, x, curses.ACS_VLINE, height)
         self.screen.vline(y, x + width - 1, curses.ACS_VLINE, height)
 
-        self.screen.addch(y, x, curses.ACS_ULCORNER)            # Esquina superior izquierda
-        self.screen.addch(y, x + width - 1, curses.ACS_URCORNER) # Esquina superior derecha
-        self.screen.addch(y + height - 1, x, curses.ACS_LLCORNER) # Esquina inferior izquierda
-        self.screen.addch(y + height - 1, x + width - 1, curses.ACS_LRCORNER) # Esquina inferior derecha
+        self.screen.addch(y, x, curses.ACS_ULCORNER)
+        self.screen.addch(y, x + width - 1, curses.ACS_URCORNER)
+        self.screen.addch(y + height - 1, x, curses.ACS_LLCORNER)
+        self.screen.addch(y + height - 1, x + width - 1, curses.ACS_LRCORNER)
 
     def calculate_cursor_positions(self):
-        width = self.screen_width - self.horizontal_margin
+        words = self.original_text.split(self.SPACE)
         x = self.horizontal_margin
         y = self.vertical_margin
-        words = self.original_text.split(self.SPACE)
+        width = self.screen_width - self.horizontal_margin
         text_index = 0
         for word in words:
-            word += " "
-            wlen = len(word)
+            wlen = len(word) + 1
             if x + wlen > width:
                 x = self.horizontal_margin
                 y += 1
@@ -145,9 +144,8 @@ class ConsoleTyping:
             x += len(word) + 1
         if self.typed_text != "":
             i = 0
-            for ch in self.typed_text:
-                self.set_correct_char_color(i,ch)
-                i += 1
+            for char_index, character in enumerate(self.typed_text):
+                self.set_correct_char_color(char_index,character)
 
 
 if __name__ == "__main__":
