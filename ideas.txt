@@ -1,8 +1,0 @@
-pasar string total para escribirlo en base al ancho de la consola
-
-cada vez que se escribe un caracter nuevo, se mueve a la derecho con el color respectivo dependiendo si esta igual al string
-Cada vez que se escribe un caracter nuevo no se reescribe todo, solo se reescrbie en la zona
-
-Se guarda la hora exacta de cuando se escribio cada caracter, y de ahí hacer los calculos. Y así saber cuanto tardo en la palabra, oracion, etc.
-
-Hacer que el texto se adapte si cambia de tamaño la terminal
