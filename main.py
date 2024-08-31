@@ -4,8 +4,10 @@ class ConsoleTyping:
     COLOR_BASE     = 1
     COLOR_CORRECT  = 2
     COLOR_WRONG    = 3
-    SPACE          = "\u2022"
-    ACCEPTED_KEYS  = "abcdefghijlmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ ,.:;_-()"
+    SPACE          = "•"
+    ENTER          = "↵"
+    TAB            = "↹"
+    ACCEPTED_KEYS  = "abcdefghijlmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ ,.:;_-()\n\t"
 
     horizontal_margin = 5
     vertical_margin = 5
@@ -33,7 +35,7 @@ class ConsoleTyping:
         curses.init_pair(2, curses.COLOR_GREEN, curses.COLOR_BLACK)
         curses.init_pair(3, curses.COLOR_RED, curses.COLOR_BLACK)
 
-        self.original_text = open("text.txt","r").read().replace(' ', self.SPACE)
+        self.original_text = open("text.txt","r").read().replace(' ', self.SPACE).replace("\n", self.ENTER).replace("\t", "↹")
         self.cursor_x = self.horizontal_margin
         self.cursor_y = self.vertical_margin
         screen_height, screen_width = self.screen.getmaxyx()
@@ -63,6 +65,10 @@ class ConsoleTyping:
                 elif char_index < len(self.original_text):
                     if key == ' ':
                         key = self.SPACE
+                    if key == '\n':
+                        key = self.ENTER
+                    if key == '\t':
+                        key = self.TAB
                     self.typed_text += key
                     self.set_correct_char_color(char_index, key)
                     char_index += 1
@@ -121,14 +127,28 @@ class ConsoleTyping:
         width = self.screen_width - self.horizontal_margin
         text_index = 0
         for word in words:
-            wlen = len(word) + 1
-            if x + wlen > width:
-                x = self.horizontal_margin
-                y += 1
-            for word_index in range(wlen):
-                self.cursor_positions[text_index] = (x + word_index, y)
-                text_index += 1
-            x += wlen
+            if self.ENTER in word:
+                word_segments = word.split(self.ENTER)
+                segments_count = len(word_segments)
+                for segment_index, segment in enumerate(word_segments):
+                    segment_len = len(segment) + 1
+                    for char_index in range(segment_len):
+                        self.cursor_positions[text_index] = (x + char_index, y)
+                        text_index += 1
+                    if segment_index < segments_count - 1:
+                        x = self.horizontal_margin
+                        y += 1
+                    else:
+                        x += segment_len
+            else:
+                word_len = len(word) + 1
+                if x + word_len > width:
+                    x = self.horizontal_margin
+                    y += 1
+                for char_index in range(word_len):
+                    self.cursor_positions[text_index] = (x + char_index, y)
+                    text_index += 1
+                x += word_len
 
     def initial_text(self):
         words = self.original_text.split(self.SPACE)
@@ -137,11 +157,21 @@ class ConsoleTyping:
         width = self.screen_width - self.horizontal_margin
 
         for word in words:
-            if x + len(word) + 1 > width:
-                x = self.horizontal_margin
-                y += 1
-            self.screen.addstr(y, x, word + self.SPACE, curses.color_pair(self.COLOR_BASE))
-            x += len(word) + 1
+            word_len = len(word) + 1
+            if self.ENTER in word:
+                word += self.SPACE
+                for char_index, character in enumerate(word):
+                    self.screen.addch(y, x, character, curses.color_pair(self.COLOR_BASE))
+                    x += 1
+                    if character == self.ENTER:
+                        x = self.horizontal_margin
+                        y += 1
+            else:
+                if x + word_len > width:
+                    x = self.horizontal_margin
+                    y += 1
+                self.screen.addstr(y, x, word + self.SPACE, curses.color_pair(self.COLOR_BASE))
+                x += word_len
         if self.typed_text != "":
             i = 0
             for char_index, character in enumerate(self.typed_text):
